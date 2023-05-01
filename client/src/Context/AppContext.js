@@ -17,9 +17,9 @@ import {
 // global state
 const initialState = {
     // when refresh page look for user
-    userLoading: false,
+    userLoading: true,
     // loading and alerts
-    isLoading: true, 
+    isLoading: false, 
     showAlert: false,
     alertMessage: "",
     alertType: "",
@@ -80,7 +80,6 @@ const AppProvider = ({children}) => {
     }, (err) => {
         // check err response status set in class
         if(err.response.status === 401) {
-            console.log("interceptor logout!")
             logoutUser()
         }
         return Promise.reject(err)
@@ -111,7 +110,6 @@ const AppProvider = ({children}) => {
         console.log("endpoint:", endpoint)
         // dispatch action w/payload and set global state
         dispatch({type: AUTH_USER})
-        console.log("authUser: ", currentUser)
         // call api and pass user object
         try {
             const response = await axios.post(`/api/v1/auth/${endpoint}`, currentUser)
@@ -126,7 +124,18 @@ const AppProvider = ({children}) => {
         } 
         // get err response object returned from browser
         catch(err) {
-            err && console.log("error registering: ", err.response.data)
+            // too many requests
+            if(err.response.status === 429) {
+                console.log("err.response.status: ", err.response.status)
+                dispatch({
+                    type: AUTH_USER_ERROR,
+                    payload: {
+                        alertMessage: "Too many request from this IP!"
+                    }
+                })
+                clearAlert()
+                return; // return out of whole block: stop code running below removing above alertMessage
+            }
             const { message } = err.response.data
             // dispatch action: w/payload and set global state
             dispatch({ 
@@ -147,7 +156,12 @@ const AppProvider = ({children}) => {
     }
 
     // logout
-    const logoutUser = () => {
+    const logoutUser = async () => {
+        try {
+            await authFetch.get("/auth/logout")
+        } catch (err) {
+            console.log("logout user error: ", err.response.message)
+        }
         dispatch({
             type: LOGOUT_USER
         })
@@ -191,7 +205,6 @@ const AppProvider = ({children}) => {
             // user back from api
             const { data } = await authFetch(`/auth/getCurrentUser`)
             const { user, location } = data
-            console.log("user getCurrentUser: ", user)
             dispatch({
                 type: GET_USER_SUCCESS,
                 payload: { user, location }
@@ -304,26 +317,31 @@ const AppProvider = ({children}) => {
             type: UPDATE_JOB
         })
 
+        // get state
         try {
-            // call api, send in job id 
-            await authFetch.patch(`/jobs/${id}`)
-            // dispatch action
-            dispatch({
-                type: UPDATE_JOB_SUCCESS, 
-                payload: {
-                    alertMessage: "Job updated!"
-                }
+            // get state
+            const { position, company, jobLocation, jobType, status } = state
+            // send data
+            await authFetch.patch(`/jobs/${id}`, {
+                position,
+                company,
+                jobLocation, 
+                jobType, 
+                status
             })
+            // success
+            dispatch({type: UPDATE_JOB_SUCCESS})
+            // clear form values
+            dispatch({ type: CLEAR_FORM_VALUES })
         } catch(err) {
             dispatch({
-                type: UPDATE_JOB_ERROR, 
-                payload: { 
-                    alertMessage: err.response.data.message 
-                }
+                type: UPDATE_JOB_ERROR,
+                payload: {alertMessage:err.response.data.message }
+
             })
-            // clear alert
-            clearAlert()
         }
+        // clear alert
+        clearAlert()
     }
 
     // delete job

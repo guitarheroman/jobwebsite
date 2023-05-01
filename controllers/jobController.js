@@ -100,6 +100,8 @@ export const getAllJobs = async (req, res) => {
 export const updateJob = async (req, res) => {
     // get params
     const { id } = req.params // req.params.id
+    console.log("job id: ", id)
+    console.log("job req.body: ", req.body)
     // get body
     const { company, position } = req.body
     // blank fields
@@ -148,7 +150,7 @@ export const deleteJob = async (req, res) => {
 
 // show stats: aggregate pipeline, get jobs by user createdBy, group and count each status values
 export const showStats = async (req, res) => {
-    console.log("showStats userId: ", req.user.userId)
+    console.log("showStats req.user: ", req.user)
     // returns array with objects in response
     let stats = await Job.aggregate([
         // match: mongodb operator (get all jobs by user)

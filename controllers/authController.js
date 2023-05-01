@@ -80,6 +80,21 @@ export const login = async (req, res) => {
     })
 }
 
+    // logout user (pass in res obj)
+    export const logout = async ({res}) => {
+        // set jwt in cookie in response obj to client (cookie: name, value (jwt), options - res.cookie auto returns in res header)
+        res.cookie("token", "logout",
+            {
+                httpOnly: true,
+                expires: new Date(Date.now()) , // expiry
+                secure: process.env.NODE_ENV === "production" // set to https only if production
+            }
+        )
+        res.status(StatusCodes.OK).json({
+            message: "User logged out"
+        })
+    }
+
 export const updateUser = async (req, res) => {
     const { email, name, lastName, location } = req.body
 

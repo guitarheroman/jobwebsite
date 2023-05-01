@@ -16,7 +16,6 @@ import {
 
 // create reducer: initialState passed from AppContext ie: const [state, dispatch] = useReducer(reducer, initialState)
 const reducer = (state, action) => {
-    console.log("action.payload: ", action.payload)
 
     // switch action passed in
     switch (action.type) {
@@ -69,9 +68,7 @@ const reducer = (state, action) => {
             return {
                 ...state,
                 userLoading: false,
-                user: null,
-                userLocation: null,
-                jobLocation: null
+                user: null
             }
         case UPDATE_USER:
             return {
@@ -194,7 +191,9 @@ const reducer = (state, action) => {
             return {
                 ...state,
                 isLoading: false,
-                alertMessage: action.payload.alertMessage
+                showAlert: true,
+                alertType: "success",
+                alertMessage: "Job updated!"
             }
         case UPDATE_JOB_ERROR: {
             return {
